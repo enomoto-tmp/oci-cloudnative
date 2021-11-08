@@ -31,47 +31,47 @@ resource "oci_containerengine_cluster" "oke_cluster" {
   count = var.create_new_oke_cluster ? 1 : 0
 }
 
-resource "oci_containerengine_node_pool" "oke_node_pool" {
-  cluster_id         = oci_containerengine_cluster.oke_cluster[0].id
-  compartment_id     = local.oke_compartment_ocid
-  kubernetes_version = (var.k8s_version == "Latest") ? local.node_pool_k8s_latest_version : var.k8s_version
-  name               = var.node_pool_name
-  node_shape         = var.node_pool_shape
-  ssh_public_key     = var.generate_public_ssh_key ? tls_private_key.oke_worker_node_ssh_key.public_key_openssh : var.public_ssh_key
+# resource "oci_containerengine_node_pool" "oke_node_pool" {
+#   cluster_id         = oci_containerengine_cluster.oke_cluster[0].id
+#   compartment_id     = local.oke_compartment_ocid
+#   kubernetes_version = (var.k8s_version == "Latest") ? local.node_pool_k8s_latest_version : var.k8s_version
+#   name               = var.node_pool_name
+#   node_shape         = var.node_pool_shape
+#   ssh_public_key     = var.generate_public_ssh_key ? tls_private_key.oke_worker_node_ssh_key.public_key_openssh : var.public_ssh_key
 
-  node_config_details {
-    dynamic "placement_configs" {
-      for_each = data.oci_identity_availability_domains.ADs.availability_domains
+#   node_config_details {
+#     dynamic "placement_configs" {
+#       for_each = data.oci_identity_availability_domains.ADs.availability_domains
 
-      content {
-        availability_domain = placement_configs.value.name
-        subnet_id           = oci_core_subnet.oke_nodes_subnet[0].id
-      }
-    }
-    size = var.cluster_autoscaler_enabled ? var.cluster_autoscaler_min_nodes : var.num_pool_workers
-  }
+#       content {
+#         availability_domain = placement_configs.value.name
+#         subnet_id           = oci_core_subnet.oke_nodes_subnet[0].id
+#       }
+#     }
+#     size = var.cluster_autoscaler_enabled ? var.cluster_autoscaler_min_nodes : var.num_pool_workers
+#   }
 
-  dynamic "node_shape_config" {
-    for_each = local.is_flexible_node_shape ? [1] : []
-    content {
-      ocpus         = var.node_pool_node_shape_config_ocpus
-      memory_in_gbs = var.node_pool_node_shape_config_memory_in_gbs
-    }
-  }
+#   dynamic "node_shape_config" {
+#     for_each = local.is_flexible_node_shape ? [1] : []
+#     content {
+#       ocpus         = var.node_pool_node_shape_config_ocpus
+#       memory_in_gbs = var.node_pool_node_shape_config_memory_in_gbs
+#     }
+#   }
 
-  node_source_details {
-    source_type             = "IMAGE"
-    image_id                = lookup(data.oci_core_images.node_pool_images.images[0], "id")
-    boot_volume_size_in_gbs = var.node_pool_boot_volume_size_in_gbs
-  }
+#   node_source_details {
+#     source_type             = "IMAGE"
+#     image_id                = lookup(data.oci_core_images.node_pool_images.images[0], "id")
+#     boot_volume_size_in_gbs = var.node_pool_boot_volume_size_in_gbs
+#   }
 
-  initial_node_labels {
-    key   = "name"
-    value = var.node_pool_name
-  }
+#   initial_node_labels {
+#     key   = "name"
+#     value = var.node_pool_name
+#   }
 
-  count = var.create_new_oke_cluster ? 1 : 0
-}
+#   count = var.create_new_oke_cluster ? 1 : 0
+# }
 
 resource "oci_identity_compartment" "oke_compartment" {
   compartment_id = var.compartment_ocid
